@@ -1,0 +1,143 @@
+/* Reset-ish */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  color: #eee;
+}
+
+body {
+  background-color: #0f0f10;
+  line-height: 1.4;
+  padding: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header */
+.top-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  border-bottom: 1px solid #333;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+
+.title h1 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: #999;
+  margin-top: 0.25rem;
+}
+
+.filters {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.filters label {
+  font-size: 0.8rem;
+  color: #ccc;
+  display: flex;
+  flex-direction: column;
+}
+
+.filters select {
+  background: #1f1f22;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.9rem;
+}
+
+/* Layout */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 1rem;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Panels */
+.panel {
+  background: #1a1a1d;
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+  border: 1px solid #2a2a30;
+}
+
+.panel h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.panel-desc {
+  font-size: 0.8rem;
+  color: #aaa;
+  margin-bottom: 0.75rem;
+  max-width: 60ch;
+}
+
+#chart-area {
+  width: 100%;
+  height: 400px;
+  border: 1px solid #333;
+  border-radius: 0.75rem;
+  background: #0f0f10;
+  position: relative;
+}
+
+/* Sidebar notes */
+.notes {
+  list-style: disc;
+  margin-left: 1rem;
+  font-size: 0.8rem;
+  color: #bbb;
+}
+.notes a {
+  color: #76b5ff;
+  text-decoration: none;
+}
+.notes a:hover {
+  text-decoration: underline;
+}
+
+#driver-stats {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #ccc;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  min-height: 6rem;
+  margin-bottom: 1rem;
+}
+
+/* Footer */
+.footer {
+  font-size: 0.7rem;
+  color: #666;
+  text-align: center;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #333;
+}

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>F1 Performance Trend Dashboard</title>
+
+  <!-- basic style -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- D3 for custom viz -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+
+  <!-- We'll write our own chart code in main.js -->
+</head>
+<body>
+  <header class="top-bar">
+    <div class="title">
+      <h1>Formula 1 Performance Trend</h1>
+      <p class="subtitle">Lap time variance, tire strategy, and consistency</p>
+    </div>
+
+    <div class="filters">
+      <label>
+        Season:
+        <select id="season-select">
+          <!-- populated dynamically -->
+        </select>
+      </label>
+
+      <label>
+        Driver:
+        <select id="driver-select">
+          <!-- populated dynamically -->
+        </select>
+      </label>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- Main visualization panel -->
+    <section class="panel main-panel">
+      <h2>Lap Time Trend</h2>
+      <p class="panel-desc">
+        Each point is a lap. Lower is faster. Use filters to compare different drivers or seasons.
+      </p>
+      <div id="chart-area"></div>
+    </section>
+
+    <!-- Sidebar panel -->
+    <aside class="panel side-panel">
+      <h2>Driver Consistency</h2>
+      <div id="driver-stats">
+        <p>Select a driver to view summary metrics like average lap time and consistency score.</p>
+      </div>
+
+      <h2>Notes</h2>
+      <ul class="notes">
+        <li>Data source: FastF1, official F1 timing data.</li>
+        <li>Weather is approximated per lap by nearest timestamped sample.</li>
+        <li><a href="../process_book.md" target="_blank">Process Book (WIP)</a></li>
+        <li><a href="https://github.com/OliverSong7/CS-6630-Project" target="_blank">GitHub Repo</a></li>
+      </ul>
+    </aside>
+  </main>
+
+  <footer class="footer">
+    <p>CS-6630 / Visualization for Data Science — Weihao (Oliver) Song</p>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
