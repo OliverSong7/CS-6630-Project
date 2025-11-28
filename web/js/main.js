@@ -9,11 +9,12 @@ let filteredData = [];
 
 // DOM handles
 const seasonSelect = document.getElementById("season-select");
+const raceSelect = document.getElementById("race-select");
 const driverSelect = document.getElementById("driver-select");
 const driverStatsDiv = document.getElementById("driver-stats");
 
 const chartDiv = document.getElementById("chart-area");
-const margin = { top: 20, right: 20, bottom: 40, left: 50 };
+const margin = { top: 20, right: 20, bottom: 70, left: 70 };
 let width = chartDiv.clientWidth - margin.left - margin.right;
 let height = chartDiv.clientHeight - margin.top - margin.bottom;
 
@@ -25,12 +26,37 @@ const svg = d3.select("#chart-area")
 const g = svg.append("g")
   .attr("transform", `translate(${margin.left},${margin.top})`);
 
+const tooltip = d3.select("body").append("div")
+  .attr("class", "tooltip")
+  .style("opacity", 0);
+
+
 const xAxisGroup = g.append("g")
   .attr("class", "x-axis")
   .attr("transform", `translate(0,${height})`);
 
 const yAxisGroup = g.append("g")
   .attr("class", "y-axis");
+
+g.append("text")
+  .attr("class", "x-label")
+  .attr("x", width / 2)
+  .attr("y", height + 50)
+  .attr("text-anchor", "middle")
+  .style("fill", "#ccc")
+  .style("font-size", "14px")
+  .text("Lap Number");
+
+g.append("text")
+  .attr("class", "y-label")
+  .attr("x", -(height / 2))
+  .attr("y", -60)
+  .attr("text-anchor", "middle")
+  .attr("transform", "rotate(-90)")
+  .style("fill", "#ccc")
+  .style("font-size", "14px")
+  .text("Lap Time (Seconds)");
+
 
 // Scales
 const xScale = d3.scaleLinear();
@@ -51,6 +77,18 @@ function updateFiltersFromData(data) {
     })
   )).sort();
 
+  const races = Array.from(new Set(
+    data.map(d => {
+      if (!d.source_file) return "Unknown";
+      const m = d.source_file.match(/laps_\d{4}_(.+)_[^_]+\.csv/);
+
+      if (m && m[1]) {
+        return m[1].replace(/_/g, " "); // replace underscores with spaces
+      }
+      return "Unknown";
+    })
+  )).sort();
+
   // Drivers
   const drivers = Array.from(new Set(data.map(d => d.Driver))).sort();
 
@@ -63,8 +101,30 @@ function updateFiltersFromData(data) {
     seasonSelect.appendChild(opt);
   });
 
+  // populate race  dropdown
+  raceSelect.innerHTML = "";
+  races.forEach(r => {
+    const opt = document.createElement("option");
+    opt.value = r;
+    opt.textContent = r.toUpperCase();
+    raceSelect.appendChild(opt);
+  });
+  
+  // Force select the first race if none selected ***
+  if (races.length > 0 && raceSelect.value === "") {
+    raceSelect.value = races[0];
+  }
+
   // populate driver dropdown
   driverSelect.innerHTML = "";
+  drivers.forEach(dr => {
+    const opt = document.createElement("option");
+    opt.value = dr;
+    opt.textContent = dr;
+    driverSelect.appendChild(opt);
+  });
+
+  driverSelect.innerHTML = ""; // clear existing options
   drivers.forEach(dr => {
     const opt = document.createElement("option");
     opt.value = dr;
@@ -75,21 +135,24 @@ function updateFiltersFromData(data) {
 
 function filterData() {
   const season = seasonSelect.value;
+  const race = raceSelect.value;
   const driver = driverSelect.value;
 
   filteredData = rawData.filter(d => {
-    // match selected driver
     if (d.Driver !== driver) return false;
 
-    // match selected season (inferred from filename again)
-    const m = d.source_file ? d.source_file.match(/laps_(\d{4})_/) : null;
-    const yr = m ? m[1] : "Unknown";
+    const mYear = d.source_file.match(/laps_(\d{4})_/);
+    const yr = mYear ? mYear[1] : "Unknown";
     if (yr !== season) return false;
+
+    const mRace = d.source_file.match(/laps_\d{4}_(.+)_[^_]+\.csv/);
+    const rName = mRace ? mRace[1].replace(/_/g, " ") : "Unknown";
+    if (rName !== race) return false;
 
     return true;
   });
 
-  // sort by lap number
+  // Sort by lap number
   filteredData.sort((a, b) => (+a.LapNumber) - (+b.LapNumber));
 }
 
@@ -144,11 +207,42 @@ function drawPoints() {
     .attr("class", "lap-point")
     .attr("r", 3)
     .attr("fill", "#999")
+
+    // Tooltip handlers
+    .on("mouseover", (event, d) => {
+      // 1. Make tooltip visible
+      tooltip.transition().duration(200).style("opacity", 1);
+
+      // 2. Set content (HTML)
+      tooltip.html(`
+        <strong>Lap ${d.LapNumber}</strong><br/>
+        Time: ${d.LapTimeSeconds}s<br/>
+        Tyre: ${d.Compound} (${d.TyreLife} laps old)
+      `)
+        // 3. Position it near the mouse
+        .style("left", (event.pageX + 10) + "px")
+        .style("top", (event.pageY - 28) + "px");
+
+      // 4. Highlight the dot (make it white and bigger)
+      d3.select(event.currentTarget)
+        .transition().duration(100)
+        .attr("r", 6)
+        .attr("fill", "#fff");
+    })
+    .on("mouseout", (event, d) => {
+      // 1. Hide tooltip
+      tooltip.transition().duration(500).style("opacity", 0);
+
+      // 2. Reset dot to normal size/color
+      d3.select(event.currentTarget)
+        .transition().duration(100)
+        .attr("r", 3)
+        .attr("fill", "#999");
+    })
+    // --- MOUSE EVENTS END ---
     .merge(pts)
     .attr("cx", d => xScale(+d.LapNumber))
     .attr("cy", d => yScale(+d.LapTimeSeconds));
-
-  pts.exit().remove();
 }
 
 function updateDriverStats() {
@@ -188,6 +282,7 @@ function renderAll() {
 
 // Event listeners
 seasonSelect.addEventListener("change", renderAll);
+raceSelect.addEventListener("change", renderAll);
 driverSelect.addEventListener("change", renderAll);
 
 // Load data initially

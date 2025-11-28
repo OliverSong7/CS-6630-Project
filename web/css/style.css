@@ -141,3 +141,19 @@ body {
   padding-top: 1rem;
   border-top: 1px solid #333;
 }
+
+/* Tooltip styles*/
+.tooltip {
+  position: absolute;
+  text-align: center;
+  padding: 8px;
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  border: 1px solid #555;
+  border-radius: 4px;
+  pointer-events: none ;
+  opacity:0;
+  transition: opacity 0.2s ease-in-out;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
