@@ -53,7 +53,6 @@ def remove_bad_laps(df: pd.DataFrame) -> pd.DataFrame:
 
     # Convert LapTime "0 days 00:01:15.123000" -> seconds as float
     def lap_to_seconds(val):
-        # pandas may store LapTime as "0 days 00:01:15.123000"
         # or "0 days 00:00:59.876000"
         t = pd.to_timedelta(val)
         return t.total_seconds()
