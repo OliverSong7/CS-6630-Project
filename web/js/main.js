@@ -1,7 +1,6 @@
 // main.js
 // Basic interactive line/scatter plot using D3
 
-// File location for now (local dev). Adjust path when deploying.
 const DATA_PATH = "../data/cleaned/laps_cleaned.csv";
 
 let rawData = [];
@@ -9,12 +8,13 @@ let filteredData = [];
 
 // DOM handles
 const seasonSelect = document.getElementById("season-select");
-const raceSelect = document.getElementById("race-select");
+const raceSelect = document.getElementById("race-select"); // <--- RESTORED
 const driverSelect = document.getElementById("driver-select");
+const sortToggle = document.getElementById("sort-toggle");
 const driverStatsDiv = document.getElementById("driver-stats");
 
 const chartDiv = document.getElementById("chart-area");
-const margin = { top: 20, right: 20, bottom: 70, left: 70 };
+const margin = { top: 20, right: 20, bottom: 60, left: 70 };
 let width = chartDiv.clientWidth - margin.left - margin.right;
 let height = chartDiv.clientHeight - margin.top - margin.bottom;
 
@@ -26,11 +26,12 @@ const svg = d3.select("#chart-area")
 const g = svg.append("g")
   .attr("transform", `translate(${margin.left},${margin.top})`);
 
+// Tooltip
 const tooltip = d3.select("body").append("div")
   .attr("class", "tooltip")
   .style("opacity", 0);
 
-
+// Axes Groups
 const xAxisGroup = g.append("g")
   .attr("class", "x-axis")
   .attr("transform", `translate(0,${height})`);
@@ -38,7 +39,8 @@ const xAxisGroup = g.append("g")
 const yAxisGroup = g.append("g")
   .attr("class", "y-axis");
 
-g.append("text")
+// Labels
+const xLabel = g.append("text")
   .attr("class", "x-label")
   .attr("x", width / 2)
   .attr("y", height + 50)
@@ -47,124 +49,101 @@ g.append("text")
   .style("font-size", "14px")
   .text("Lap Number");
 
-g.append("text")
+const yLabel = g.append("text")
   .attr("class", "y-label")
   .attr("x", -(height / 2))
-  .attr("y", -60)
+  .attr("y", -50)
   .attr("text-anchor", "middle")
   .attr("transform", "rotate(-90)")
   .style("fill", "#ccc")
   .style("font-size", "14px")
   .text("Lap Time (Seconds)");
 
-
 // Scales
 const xScale = d3.scaleLinear();
 const yScale = d3.scaleLinear();
 
-// Line generator
+// Line Generator
 const lineGen = d3.line()
-  .x(d => xScale(+d.LapNumber))
-  .y(d => yScale(+d.LapTimeSeconds));
+  .x((d, i) => sortToggle.checked ? xScale(i) : xScale(d.LapNumber))
+  .y(d => yScale(d.LapTimeSeconds));
 
 function updateFiltersFromData(data) {
-  // Season inference from source_file name (example: "laps_2023_monaco_R.csv")
-  const seasons = Array.from(new Set(
-    data.map(d => {
-      if (!d.source_file) return "Unknown";
-      const m = d.source_file.match(/laps_(\d{4})_/);
-      return m ? m[1] : "Unknown";
-    })
-  )).sort();
+  // 1. Extract Seasons
+  const seasons = Array.from(new Set(data.map(d => {
+    const m = d.source_file ? d.source_file.match(/laps_(\d{4})_/) : null;
+    return m ? m[1] : "2023";
+  }))).sort();
 
-  const races = Array.from(new Set(
-    data.map(d => {
-      if (!d.source_file) return "Unknown";
-      const m = d.source_file.match(/laps_\d{4}_(.+)_[^_]+\.csv/);
+  // 2. Extract Races (RESTORED LOGIC)
+  const races = Array.from(new Set(data.map(d => {
+    if (!d.source_file) return "Unknown";
+    // Tries to extract "monaco" from "laps_2023_monaco_R.csv"
+    const m = d.source_file.match(/laps_\d{4}_(.+)_[^_]+\.csv/);
+    return m ? m[1].replace(/_/g, " ") : "Unknown";
+  }))).sort();
 
-      if (m && m[1]) {
-        return m[1].replace(/_/g, " "); // replace underscores with spaces
-      }
-      return "Unknown";
-    })
-  )).sort();
-
-  // Drivers
+  // 3. Extract Drivers
   const drivers = Array.from(new Set(data.map(d => d.Driver))).sort();
 
-  // populate season dropdown
+  // Populate UI
   seasonSelect.innerHTML = "";
-  seasons.forEach(s => {
-    const opt = document.createElement("option");
-    opt.value = s;
-    opt.textContent = s;
-    seasonSelect.appendChild(opt);
-  });
+  seasons.forEach(s => seasonSelect.add(new Option(s, s)));
 
-  // populate race  dropdown
   raceSelect.innerHTML = "";
-  races.forEach(r => {
-    const opt = document.createElement("option");
-    opt.value = r;
-    opt.textContent = r.toUpperCase();
-    raceSelect.appendChild(opt);
-  });
-  
-  // Force select the first race if none selected ***
+  races.forEach(r => raceSelect.add(new Option(r.toUpperCase(), r)));
+  // Default to first race if available
   if (races.length > 0 && raceSelect.value === "") {
     raceSelect.value = races[0];
   }
 
-  // populate driver dropdown
   driverSelect.innerHTML = "";
-  drivers.forEach(dr => {
-    const opt = document.createElement("option");
-    opt.value = dr;
-    opt.textContent = dr;
-    driverSelect.appendChild(opt);
-  });
-
-  driverSelect.innerHTML = ""; // clear existing options
-  drivers.forEach(dr => {
-    const opt = document.createElement("option");
-    opt.value = dr;
-    opt.textContent = dr;
-    driverSelect.appendChild(opt);
-  });
+  drivers.forEach(dr => driverSelect.add(new Option(dr, dr)));
 }
 
 function filterData() {
   const season = seasonSelect.value;
-  const race = raceSelect.value;
+  const race = raceSelect.value; // <--- USES DROPDOWN AGAIN
   const driver = driverSelect.value;
+  const isSorted = sortToggle.checked;
 
   filteredData = rawData.filter(d => {
+    // Match Driver
     if (d.Driver !== driver) return false;
-
-    const mYear = d.source_file.match(/laps_(\d{4})_/);
-    const yr = mYear ? mYear[1] : "Unknown";
+    
+    // Match Season
+    const mYear = d.source_file ? d.source_file.match(/laps_(\d{4})_/) : null;
+    const yr = mYear ? mYear[1] : "2023";
     if (yr !== season) return false;
 
-    const mRace = d.source_file.match(/laps_\d{4}_(.+)_[^_]+\.csv/);
+    // Match Race
+    const mRace = d.source_file ? d.source_file.match(/laps_\d{4}_(.+)_[^_]+\.csv/) : null;
     const rName = mRace ? mRace[1].replace(/_/g, " ") : "Unknown";
     if (rName !== race) return false;
 
     return true;
   });
 
-  // Sort by lap number
-  filteredData.sort((a, b) => (+a.LapNumber) - (+b.LapNumber));
+  // Sorting Logic
+  if (isSorted) {
+    filteredData.sort((a, b) => a.LapTimeSeconds - b.LapTimeSeconds);
+  } else {
+    filteredData.sort((a, b) => a.LapNumber - b.LapNumber);
+  }
 }
 
 function updateScales() {
-  xScale
-    .domain(d3.extent(filteredData, d => +d.LapNumber))
-    .range([0, width]);
+  const isSorted = sortToggle.checked;
 
-  yScale
-    .domain(d3.extent(filteredData, d => +d.LapTimeSeconds))
-    .nice()
-    .range([height, 0]);
+  if (isSorted) {
+    xScale.domain([0, filteredData.length - 1]).range([0, width]);
+    xLabel.text("Laps Sorted by Speed (Fastest → Slowest)");
+  } else {
+    xScale.domain(d3.extent(filteredData, d => d.LapNumber)).range([0, width]);
+    xLabel.text("Lap Number");
+  }
+
+  yScale.domain(d3.extent(filteredData, d => d.LapTimeSeconds)).nice().range([height, 0]);
 }
 
 function drawAxes() {
@@ -173,97 +152,87 @@ function drawAxes() {
 
   xAxisGroup.call(xAxis);
   yAxisGroup.call(yAxis);
-
-  // axis label styling
-  xAxisGroup.selectAll("text")
-    .style("fill", "#ccc")
-    .style("font-size", "10px");
-  yAxisGroup.selectAll("text")
-    .style("fill", "#ccc")
-    .style("font-size", "10px");
-  xAxisGroup.selectAll("line, path").style("stroke", "#444");
-  yAxisGroup.selectAll("line, path").style("stroke", "#444");
+  
+  g.selectAll(".domain, .tick line").style("stroke", "#444");
+  g.selectAll(".tick text").style("fill", "#ccc").style("font-size", "10px");
 }
 
 function drawLine() {
-  // Join
   const pathSel = g.selectAll(".lap-line").data([filteredData]);
-  // Enter + Update
+  
   pathSel.enter()
     .append("path")
     .attr("class", "lap-line")
     .merge(pathSel)
+    .transition().duration(500)
+    .attr("d", lineGen)
     .attr("fill", "none")
     .attr("stroke", "#76b5ff")
-    .attr("stroke-width", 2)
-    .attr("d", lineGen);
+    .attr("stroke-width", 2);
 }
 
 function drawPoints() {
+  const isSorted = sortToggle.checked;
+  
   const pts = g.selectAll(".lap-point").data(filteredData, d => d.LapNumber);
 
   pts.enter()
     .append("circle")
     .attr("class", "lap-point")
-    .attr("r", 3)
+    .attr("r", 4)
     .attr("fill", "#999")
-
-    // Tooltip handlers
     .on("mouseover", (event, d) => {
-      // 1. Make tooltip visible
       tooltip.transition().duration(200).style("opacity", 1);
-
-      // 2. Set content (HTML)
       tooltip.html(`
         <strong>Lap ${d.LapNumber}</strong><br/>
-        Time: ${d.LapTimeSeconds}s<br/>
-        Tyre: ${d.Compound} (${d.TyreLife} laps old)
+        Time: ${d.LapTimeSeconds.toFixed(3)}s<br/>
+        Tyre: ${d.Compound}
       `)
-        // 3. Position it near the mouse
-        .style("left", (event.pageX + 10) + "px")
-        .style("top", (event.pageY - 28) + "px");
-
-      // 4. Highlight the dot (make it white and bigger)
-      d3.select(event.currentTarget)
-        .transition().duration(100)
-        .attr("r", 6)
-        .attr("fill", "#fff");
+      .style("left", (event.pageX + 10) + "px")
+      .style("top", (event.pageY - 28) + "px");
+      
+      d3.select(event.currentTarget).attr("fill", "#fff").attr("r", 6);
     })
     .on("mouseout", (event, d) => {
-      // 1. Hide tooltip
       tooltip.transition().duration(500).style("opacity", 0);
-
-      // 2. Reset dot to normal size/color
-      d3.select(event.currentTarget)
-        .transition().duration(100)
-        .attr("r", 3)
-        .attr("fill", "#999");
+      d3.select(event.currentTarget).attr("fill", "#999").attr("r", 4);
     })
-    // --- MOUSE EVENTS END ---
     .merge(pts)
-    .attr("cx", d => xScale(+d.LapNumber))
-    .attr("cy", d => yScale(+d.LapTimeSeconds));
+    .transition().duration(500)
+    .attr("cx", (d, i) => isSorted ? xScale(i) : xScale(d.LapNumber))
+    .attr("cy", d => yScale(d.LapTimeSeconds));
+
+  pts.exit().remove();
 }
 
 function updateDriverStats() {
   if (filteredData.length === 0) {
-    driverStatsDiv.innerHTML = "<p>No data for this selection.</p>";
+    driverStatsDiv.innerHTML = "<p>No data.</p>";
     return;
   }
-
-  const avg = d3.mean(filteredData, d => +d.LapTimeSeconds);
-  const sd = d3.deviation(filteredData, d => +d.LapTimeSeconds);
-  const laps = filteredData.length;
-  const team = filteredData[0].Team;
+  const avg = d3.mean(filteredData, d => d.LapTimeSeconds);
+  const sd = d3.deviation(filteredData, d => d.LapTimeSeconds) || 0;
+  const info = filteredData[0];
 
   driverStatsDiv.innerHTML = `
-    <div><strong>Driver:</strong> ${filteredData[0].Driver}</div>
-    <div><strong>Team:</strong> ${team}</div>
-    <div><strong>Laps used:</strong> ${laps}</div>
-    <div><strong>Avg Lap Time (s):</strong> ${avg.toFixed(3)}</div>
-    <div><strong>Std Dev (s):</strong> ${sd.toFixed(3)}</div>
+    <div style="margin-bottom: 1rem;">
+      <div><strong>Driver:</strong> ${info.Driver}</div>
+      <div><strong>Team:</strong> ${info.Team}</div>
+      <div><strong>Laps:</strong> ${filteredData.length}</div>
+      <div><strong>Avg Pace:</strong> ${avg.toFixed(3)}s</div>
+      <div><strong>Consistency:</strong> ${sd.toFixed(3)}</div>
+    </div>
+    <a href="profile.html?driver=${info.Driver}" class="btn-profile" style="
+      display: block; background: #76b5ff; color: #000; text-align: center; 
+      padding: 10px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+      View Driver Analysis →
+    </a>
   `;
 }
+
+// Hooks for sidebar charts
+function drawTyreChart() { /* ... */ }
+function drawRadarChart() { /* ... */ }
 
 function renderAll() {
   filterData();
@@ -278,25 +247,23 @@ function renderAll() {
   drawLine();
   drawPoints();
   updateDriverStats();
+  if (typeof drawTyreChart === "function") drawTyreChart();
+  if (typeof drawRadarChart === "function") drawRadarChart();
 }
 
-// Event listeners
+// Event listeners (RESTORED raceSelect)
 seasonSelect.addEventListener("change", renderAll);
-raceSelect.addEventListener("change", renderAll);
+raceSelect.addEventListener("change", renderAll); // <--- LISTENING AGAIN
 driverSelect.addEventListener("change", renderAll);
+sortToggle.addEventListener("change", renderAll);
 
-// Load data initially
+// Load Data
 d3.csv(DATA_PATH).then(data => {
-  // parse numerics just once
   data.forEach(d => {
     d.LapNumber = +d.LapNumber;
     d.LapTimeSeconds = +d.LapTimeSeconds;
   });
-
   rawData = data;
   updateFiltersFromData(rawData);
   renderAll();
-}).catch(err => {
-  console.error("Error loading data:", err);
-  driverStatsDiv.innerHTML = "<p style='color:#f66;'>Failed to load data. Run scripts/clean_data.py first.</p>";
-});
+}).catch(err => console.error(err));

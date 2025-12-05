@@ -4,32 +4,35 @@
 **Course:** CS-6630 Visualization for Data Science  
 
 ## Project Overview
-This project is an interactive data visualization dashboard designed to analyze Formula 1 driver performance. It processes raw telemetry data from the **FastF1** library and visualizes it using **D3.js**.
+This project is an interactive web application designed to analyze Formula 1 driver performance beyond simple lap times. It processes raw telemetry data from the **FastF1** library and visualizes it using **D3.js**.
 
 The dashboard allows users to explore:
-* **Lap Time Trends:** Visualize pace evolution across a race.
-* **Driver Consistency:** Analyze standard deviation to see who drives like a robot vs. who is erratic.
-* **Tyre Strategy:** See which compound (Soft, Medium, Hard) was used for each lap via tooltips.
-* **Multi-Race Comparison:** Switch between different Grand Prix events (e.g., Monaco vs. Las Vegas) to see how track characteristics affect lap times.
+* **Lap Time Trends:** Visualize pace evolution across a race (Time Series).
+* **Consistency Analysis:** Toggle "Sort by Speed" to view the performance distribution curve.
+* **Multi-Race Comparison:** Switch between different Grand Prix events (e.g., Monaco vs. Las Vegas).
+* **Driver Deep Dive:** A dedicated profile page featuring a **5-Point Radar Chart** (Speed, Pace, Smoothness, Endurance, Limit Pushing).
 
 ## Project Structure
 
 ```text
 CS-6630-Project/
 ├── data/
-│   ├── raw/          # Raw CSV files downloaded from FastF1 (one file per race)
-│   ├── cleaned/      # The final merged CSV file (laps_cleaned.csv) used by the website
-│   └── cache/        # Temporary cache for FastF1 (safe to delete)
+│   ├── raw/          # Raw CSV files downloaded from FastF1
+│   ├── cleaned/      # The final merged CSV file (laps_cleaned.csv)
+│   └── cache/        # Temporary FastF1 cache
 ├── scripts/
-│   ├── fetch_data.py # Downloads telemetry data for specific races
-│   └── clean_data.py # Merges all raw files, cleans outliers, and calculates stats
+│   ├── fetch_data.py # Downloads telemetry data
+│   └── clean_data.py # Merges and cleans data
 ├── web/
-│   ├── index.html    # The dashboard structure (Dropdowns + Chart Container)
+│   ├── index.html    # Main Dashboard (Scatter Plot)
+│   ├── profile.html  # Driver Profile Page (Hexagon Chart)
 │   ├── css/
-│   │   └── style.css # Dark mode styling and layout
-│   └── js/
-│       └── main.js   # D3.js logic for rendering the scatter plot, axes, and tooltips
-├── process_book.md   # Documentation of design choices and evolution
+│   │   └── style.css # Dark mode styling
+│   ├── js/
+│   │   ├── main.js   # Logic for Main Dashboard
+│   │   └── profile.js # Logic for Profile Page & Radar Chart
+│   └── img/          # Driver photos (Saved locally)
+├── process_book.md   # Design evolution documentation
 └── README.md         # This file
 
 

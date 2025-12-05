@@ -1,18 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>F1 Performance Trend Dashboard</title>
 
-  <!-- basic style -->
   <link rel="stylesheet" href="css/style.css" />
 
-  <!-- D3 for custom viz -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
 
-  <!-- We'll write our own chart code in main.js -->
 </head>
+
 <body>
   <header class="top-bar">
     <div class="title">
@@ -23,24 +22,27 @@
     <div class="filters">
       <label>
         Season:
-        <select id="season-select">
-        </select>
+        <select id="season-select"></select>
+      </label>
+
+      <label>
+        Race:
+        <select id="race-select"></select>
       </label>
 
       <label>
         Driver:
-        <select id="driver-select">
-        </select>
+        <select id="driver-select"></select>
       </label>
-      <label>
-        Race:
-        <select id="race-select"></select>
+
+      <label style="flex-direction: row; align-items: center; gap: 0.5rem; cursor: pointer;">
+        <input type="checkbox" id="sort-toggle">
+        <span>Sort by Speed</span>
       </label>
     </div>
   </header>
 
   <main class="layout">
-    <!-- Main visualization panel -->
     <section class="panel main-panel">
       <h2>Lap Time Trend</h2>
       <p class="panel-desc">
@@ -49,7 +51,6 @@
       <div id="chart-area"></div>
     </section>
 
-    <!-- Sidebar panel -->
     <aside class="panel side-panel">
       <h2>Driver Consistency</h2>
       <div id="driver-stats">
@@ -72,4 +73,5 @@
 
   <script src="js/main.js"></script>
 </body>
+
 </html>
